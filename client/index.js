@@ -33,6 +33,7 @@ var hot = false;
 var initial = true;
 var currentHash = "";
 var logLevel = "info";
+var confirmReload = false;
 var useWarningOverlay = false;
 var useErrorOverlay = false;
 
@@ -86,6 +87,9 @@ var onSocketMsg = {
 			}
 		}
 	},
+	"confirm-reload": function(opt) {
+		confirmReload = opt;
+	},
 	ok: function() {
 		sendMsg("Ok");
 		if(useWarningOverlay || useErrorOverlay) overlay.clear();
@@ -105,8 +109,7 @@ var onSocketMsg = {
 		for(var i = 0; i < strippedWarnings.length; i++)
 			console.warn(strippedWarnings[i]);
 		if(useWarningOverlay) overlay.showMessage(warnings);
-
-		if(initial) return initial = false;
+		if(initial) return setTimeout(function() { initial = false; }, 50);
 		reloadApp();
 	},
 	errors: function(errors) {
@@ -118,6 +121,8 @@ var onSocketMsg = {
 		for(var i = 0; i < strippedErrors.length; i++)
 			console.error(strippedErrors[i]);
 		if(useErrorOverlay) overlay.showMessage(errors);
+		if(initial) return setTimeout(function() { initial = false; }, 50);
+		reloadApp();
 	},
 	error: function(error) {
 		console.error(error);
@@ -166,10 +171,10 @@ self.addEventListener("beforeunload", function() {
 });
 
 function reloadApp() {
-	if(isUnloading) {
+	if (isUnloading) {
 		return;
 	}
-	if(hot) {
+	if (hot) {
 		log("info", "[WDS] App hot update...");
 		var hotEmitter = require("webpack/hot/emitter");
 		hotEmitter.emit("webpackHotUpdate", currentHash);
@@ -179,6 +184,7 @@ function reloadApp() {
 		}
 	} else {
 		log("info", "[WDS] App updated. Reloading...");
-		self.location.reload();
+		if (!confirmReload || confirm("Source changed. Reoload page?"))
+			self.location.reload();
 	}
 }

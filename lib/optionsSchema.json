@@ -67,6 +67,10 @@
         "error"
       ]
     },
+    "confirmReload": {
+      "description": "Show a confirmation dialog before reloading the page.",
+      "type": "boolean"
+    },
     "overlay": {
       "description": "Shows an error overlay in browser.",
       "anyOf": [
