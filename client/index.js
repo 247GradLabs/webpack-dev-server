@@ -36,6 +36,7 @@ var logLevel = "info";
 var confirmReload = false;
 var useWarningOverlay = false;
 var useErrorOverlay = false;
+var reloading = false;
 
 function log(level, msg) {
 	if(logLevel === "info" && level === "info")
@@ -171,20 +172,26 @@ self.addEventListener("beforeunload", function() {
 });
 
 function reloadApp() {
-	if (isUnloading) {
-		return;
-	}
-	if (hot) {
-		log("info", "[WDS] App hot update...");
-		var hotEmitter = require("webpack/hot/emitter");
-		hotEmitter.emit("webpackHotUpdate", currentHash);
-		if(typeof self !== "undefined" && self.window) {
-			// broadcast update to window
-			self.postMessage("webpackHotUpdate" + currentHash, "*");
+	if (reloading) return;
+	reloading = true;
+	try {
+		if (isUnloading) {
+			return;
 		}
-	} else {
-		log("info", "[WDS] App updated. Reloading...");
-		if (!confirmReload || confirm("Source changed. Reoload page?"))
-			self.location.reload();
+		if (hot) {
+			log("info", "[WDS] App hot update...");
+			var hotEmitter = require("webpack/hot/emitter");
+			hotEmitter.emit("webpackHotUpdate", currentHash);
+			if(typeof self !== "undefined" && self.window) {
+				// broadcast update to window
+				self.postMessage("webpackHotUpdate" + currentHash, "*");
+			}
+		} else {
+			log("info", "[WDS] App updated. Reloading...");
+			if (!confirmReload || confirm("Source changed. Reoload page?"))
+				self.location.reload();
+		}
+	} finally {
+		reloading = false;
 	}
 }
